@@ -1,43 +1,41 @@
 const { v4: uuidv4 } = require('uuid');
-const db = require('./db');
+const fs = require('fs').promises;
+const path = require('path');
+const contactsPath = path.join(__dirname, 'contacts.json');
+const contacts = require('./contacts.json');
 
-const listContacts = async () => {
-  return db.get('contacts').value();
+const listContacts = () => {
+  return contacts;
 };
 
 const getContactById = async contactId => {
-  return db
-    .get('contacts')
-    .find(({ id }) => id.toString() === contactId)
-    .value();
+  const contact = contacts.find(item => item.id.toString() === contactId);
+  return contact;
 };
 
 const removeContact = async contactId => {
-  const [record] = db
-    .get('contacts')
-    .remove(({ id }) => id.toString() === contactId)
-    .write();
-  return record;
+  const deletedContact = await getContactById(contactId);
+  const filteredContacts = contacts.filter(item => item.id.toString() !== contactId);
+  await fs.writeFile(contactsPath, JSON.stringify(filteredContacts));
+  return deletedContact;
 };
 
 const addContact = async body => {
   const id = uuidv4();
-  const record = {
+  const contact = {
     id,
     ...body,
   };
-  db.get('contacts').push(record).write();
-  return record;
+  const newContacts = [...contacts, contact];
+  await fs.writeFile(contactsPath, JSON.stringify(newContacts));
+  return contact;
 };
 
 const updateContact = async (contactId, body) => {
-  const record = db
-    .get('contacts')
-    .find(({ id }) => id.toString() === contactId)
-    .assign(body)
-    .value();
-  db.write();
-  return record.id ? record : null;
+  const contactToUpdate = await getContactById(contactId);
+  Object.assign(contactToUpdate, body);
+  await fs.writeFile(contactsPath, JSON.stringify(contacts));
+  return contactToUpdate.id ? contactToUpdate : null;
 };
 
 module.exports = {
