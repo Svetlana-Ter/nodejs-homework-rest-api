@@ -67,8 +67,31 @@ const logout = async (req, res, next) => {
   return res.status(HttpCode.NO_CONTENT).json({});
 };
 
+const getCurrentUser = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    const user = await Users.findById(userId);
+    if (user) {
+      return res.json({
+        status: 'success',
+        code: 200,
+        data: { user },
+      });
+    } else {
+      return res.status(404).json({
+        status: 'error',
+        code: 404,
+        data: { message: 'User is not found' },
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   registration,
   login,
   logout,
+  getCurrentUser,
 };
