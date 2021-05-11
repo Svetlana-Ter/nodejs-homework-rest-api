@@ -1,7 +1,10 @@
+require('dotenv').config();
+const jimp = require('jimp');
+const fs = require('fs/promises');
+const path = require('path');
+const jwt = require('jsonwebtoken');
 const Users = require('../model/users');
 const { HttpCode } = require('../helpers/constants');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 
 const registration = async (req, res, next) => {
@@ -24,6 +27,7 @@ const registration = async (req, res, next) => {
           id: newUser.id,
           email: newUser.email,
           subscription: newUser.subscription,
+          avatar: newUser.avatar,
         },
       },
     });
@@ -89,9 +93,38 @@ const getCurrentUser = async (req, res, next) => {
   }
 };
 
+const updateAvatar = async (req, res, next) => {
+  const { id } = req.user;
+  const avatarUrl = await saveUserAvatar(req);
+  await Users.updateAvatar(id, avatarUrl);
+  return res.status(HttpCode.OK).json({ status: 'success', code: HttpCode.OK, data: { avatarUrl } });
+};
+
+const saveUserAvatar = async req => {
+  const FOLDER_AVATARS = process.env.FOLDER_AVATARS;
+  const pathFile = req.file.path;
+  const newAvatarName = `${Date.now().toString()}-${req.file.originalname}`;
+  const img = await jimp.read(pathFile);
+  await img
+    .autocrop()
+    .cover(250, 250, jimp.HORIZONTAL_ALIGN_CENTER | jimp.VERTICAL_ALIGN_MIDDLE)
+    .writeAsync(pathFile);
+  try {
+    await fs.rename(pathFile, path.join(process.cwd(), 'public', FOLDER_AVATARS, newAvatarName));
+  } catch (error) {
+    console.log(error.message);
+  }
+  const oldAvatar = req.user.avatar;
+  if (oldAvatar.includes(`${FOLDER_AVATARS}/`)) {
+    await fs.unlink(path.join(process.cwd(), 'public', oldAvatar));
+  }
+  return path.join(FOLDER_AVATARS, newAvatarName);
+};
+
 module.exports = {
   registration,
   login,
   logout,
   getCurrentUser,
+  updateAvatar,
 };

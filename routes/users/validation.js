@@ -2,17 +2,21 @@ const Joi = require('joi');
 
 const schemaRegistrationUser = Joi.object({
   email: Joi.string()
-    .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'uk', 'ca', 'org'] } })
+    .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'uk', 'ca', 'org', 'ua'] } })
     .required(),
-  password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')).required(),
+  password: Joi.string()
+    .pattern(/^[a-zA-Z0-9]{3,30}$/)
+    .required(),
   subscription: Joi.string().optional(),
 });
 
 const schemaLoginUser = Joi.object({
   email: Joi.string()
-    .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'uk', 'ca', 'org'] } })
+    .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'uk', 'ca', 'org', 'ua'] } })
     .required(),
-  password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')).required(),
+  password: Joi.string()
+    .pattern(/^[a-zA-Z0-9]{3,30}$/)
+    .required(),
 });
 
 const validate = async (schema, obj, next) => {
